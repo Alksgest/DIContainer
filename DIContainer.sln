@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31025.194
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DIContainer", "DIContainer\DIContainer.csproj", "{B5CBAE69-4420-4533-92C3-C4837AD7C1AF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DIContainer.Test", "DIContainer.Test\DIContainer.Test.csproj", "{926EC886-9EE3-4A25-B8F0-2352C740A68B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B5CBAE69-4420-4533-92C3-C4837AD7C1AF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B5CBAE69-4420-4533-92C3-C4837AD7C1AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B5CBAE69-4420-4533-92C3-C4837AD7C1AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B5CBAE69-4420-4533-92C3-C4837AD7C1AF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{926EC886-9EE3-4A25-B8F0-2352C740A68B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{926EC886-9EE3-4A25-B8F0-2352C740A68B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{926EC886-9EE3-4A25-B8F0-2352C740A68B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{926EC886-9EE3-4A25-B8F0-2352C740A68B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A90C5E6B-3DB7-4604-8BD3-18047C5BBE40}
+	EndGlobalSection
+EndGlobal
