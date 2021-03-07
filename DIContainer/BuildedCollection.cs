@@ -51,7 +51,7 @@ namespace DIContainer
         {
             var ctor = GetCallableConstructor(classType.GetConstructors(BindingFlags.Public | BindingFlags.Instance));
 
-            if (ctor == null) throw new DiException($"There are no callable constructors for type {classType.Name}");
+            if (ctor == null) throw new DiException($"There are no callable constructor for type {classType.Name}");
 
             var ctorParams = GetConstructorParams(ctor);
 
@@ -89,7 +89,7 @@ namespace DIContainer
 
                 if (paramCtor == null)
                 {
-                    throw new DiException($"Cannot create params ctor of type {parameter.ParameterType.Name}");
+                    throw new DiException($"Cannot create param`s ctor of type {parameter.ParameterType.Name}");
                 }
 
                 var param = paramCtor.Invoke(GetConstructorParamsInner(paramCtor));

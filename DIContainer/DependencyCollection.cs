@@ -10,7 +10,6 @@ namespace DIContainer
 
         internal DependencyCollection()
         {
-
         }
 
         public IDependencyCollection RegisterSingleton<TClass>() where TClass : class

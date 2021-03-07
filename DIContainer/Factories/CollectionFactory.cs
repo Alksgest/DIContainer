@@ -4,7 +4,7 @@
     {
         public static IDependencyCollection CreateCollection()
         {
-            return new DependencyCollection();;
+            return new DependencyCollection();
         }
     }
 }
