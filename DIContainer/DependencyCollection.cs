@@ -8,6 +8,10 @@ namespace DIContainer
         private readonly IDictionary<Type, Type> _scoped = new Dictionary<Type, Type>();
         private readonly IDictionary<Type, Type> _singletons = new Dictionary<Type, Type>();
 
+        internal DependencyCollection()
+        {
+        }
+
         public IDependencyCollection RegisterSingleton<TClass>() where TClass : class
         {
             if (_singletons.ContainsKey(typeof(TClass)))
@@ -58,7 +62,7 @@ namespace DIContainer
 
         public IBuildedCollection Build()
         {
-            return BuildedCollection.BuildCollection(_singletons, _scoped);
+            return new BuildedCollection(_singletons, _scoped);
         }
     }
 }

@@ -8,18 +8,14 @@ namespace DIContainer
 {
     internal class BuildedCollection : IBuildedCollection
     {
-
-        public static IBuildedCollection BuildCollection(IDictionary<Type, Type> singletons, IDictionary<Type, Type> scoped)
-        {
-            return new BuildedCollection(singletons, scoped);
-        }
-
         private readonly IDictionary<Type, object> _createdSingletons = new Dictionary<Type, object>();
 
         private readonly IDictionary<Type, Type> _singletons;
         private readonly IDictionary<Type, Type> _scoped;
 
-        private BuildedCollection(IDictionary<Type, Type> singletons, IDictionary<Type, Type> scoped)
+        internal BuildedCollection(
+            IDictionary<Type, Type> singletons,
+            IDictionary<Type, Type> scoped)
         {
             _singletons = singletons;
             _scoped = scoped;
@@ -55,7 +51,7 @@ namespace DIContainer
         {
             var ctor = GetCallableConstructor(classType.GetConstructors(BindingFlags.Public | BindingFlags.Instance));
 
-            if (ctor == null) throw new DiException($"There are no callable constructors for type {classType.Name}");
+            if (ctor == null) throw new DiException($"There are no callable constructor for type {classType.Name}");
 
             var ctorParams = GetConstructorParams(ctor);
 
@@ -93,7 +89,7 @@ namespace DIContainer
 
                 if (paramCtor == null)
                 {
-                    throw new DiException($"Cannot create params ctor of type {parameter.ParameterType.Name}");
+                    throw new DiException($"Cannot create param`s ctor of type {parameter.ParameterType.Name}");
                 }
 
                 var param = paramCtor.Invoke(GetConstructorParamsInner(paramCtor));

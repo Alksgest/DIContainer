@@ -1,41 +1,17 @@
 using System;
 using DIContainer.Exceptions;
+using DIContainer.Factories;
+using DIContainer.Test.TestModels;
 using Xunit;
 
 namespace DIContainer.Test
 {
-    public class Repository : IRepository
-    {
-
-    }
-
-    public interface IRepository
-    {
-    }
-
-    public class Service: IService
-    {
-        private readonly IRepository _repo;
-
-        public IRepository Repo => _repo;
-
-        public Service(IRepository repo)
-        {
-            _repo = repo;
-        }
-    }
-
-    public interface IService
-    {
-        IRepository Repo { get; }
-    }
-
     public class BuildedCollectionTest
     {
         [Fact]
         public void SingletonTest1()
         {
-            IDependencyCollection collection = new DependencyCollection();
+            var collection = CollectionFactory.CreateCollection();
 
             collection
                 .RegisterSingleton<IRepository, Repository>()
@@ -53,7 +29,7 @@ namespace DIContainer.Test
         [Fact]
         public void SingletonTest2()
         {
-            IDependencyCollection collection = new DependencyCollection();
+            var collection = CollectionFactory.CreateCollection();
 
             collection.RegisterSingleton<Repository>();
 
@@ -79,7 +55,7 @@ namespace DIContainer.Test
         [Fact]
         public void SingletonTest3()
         {
-            IDependencyCollection collection = new DependencyCollection();
+            var collection = CollectionFactory.CreateCollection();
 
             collection.RegisterSingleton<Repository>();
 
@@ -94,7 +70,7 @@ namespace DIContainer.Test
         [Fact]
         public void SingletonTest4()
         {
-            IDependencyCollection collection = new DependencyCollection();
+            var collection = CollectionFactory.CreateCollection();
 
             collection
                 .RegisterSingleton<IRepository, Repository>()
@@ -116,7 +92,7 @@ namespace DIContainer.Test
         [Fact]
         public void ScopedTest1()
         {
-            IDependencyCollection collection = new DependencyCollection();
+            var collection = CollectionFactory.CreateCollection();
 
             collection.RegisterScoped<Repository>();
 
@@ -131,7 +107,7 @@ namespace DIContainer.Test
         [Fact]
         public void ScopedTest2()
         {
-            IDependencyCollection collection = new DependencyCollection();
+            var collection = CollectionFactory.CreateCollection();
 
             collection
                 .RegisterSingleton<IRepository, Repository>()
