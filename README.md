@@ -9,7 +9,7 @@ Description:
 Usage: 
   - Create new dependency collection by colling: CollectionFactory.CreateCollection();
   - Register your classes like singleton or scoped: collection
-                                                    .RegisterSingleton<IRepository, Repository>()
-                                                    .RegisterScoped<Service>();
+                                                    .RegisterSingleton<TInterface, TClass>()
+                                                    .RegisterScoped<TClass>();
   - Build dependencyCollection by calling: collection.Build();
-  - Get any class yoy`ve been register to collection by calling: buildedCollection.Get<IRepository>();
+  - Get any class yoy`ve been register to collection by calling: buildedCollection.Get<TInterface || TClass>();
