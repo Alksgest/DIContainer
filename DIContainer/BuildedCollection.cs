@@ -8,18 +8,14 @@ namespace DIContainer
 {
     internal class BuildedCollection : IBuildedCollection
     {
-
-        public static IBuildedCollection BuildCollection(IDictionary<Type, Type> singletons, IDictionary<Type, Type> scoped)
-        {
-            return new BuildedCollection(singletons, scoped);
-        }
-
         private readonly IDictionary<Type, object> _createdSingletons = new Dictionary<Type, object>();
 
         private readonly IDictionary<Type, Type> _singletons;
         private readonly IDictionary<Type, Type> _scoped;
 
-        private BuildedCollection(IDictionary<Type, Type> singletons, IDictionary<Type, Type> scoped)
+        internal BuildedCollection(
+            IDictionary<Type, Type> singletons,
+            IDictionary<Type, Type> scoped)
         {
             _singletons = singletons;
             _scoped = scoped;
