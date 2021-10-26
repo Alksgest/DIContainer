@@ -77,13 +77,12 @@ namespace DIContainer
                 if (_createdSingletons.ContainsKey(parameter.ParameterType))
                 {
                     ctorData.Add(_createdSingletons[parameter.ParameterType]);
-                    continue; ;
+                    continue;
                 }
 
-                var isInterface = parameter.ParameterType.IsInterface;
-                var ctor = isInterface
-                    ? GetCallableConstructor(_singletons[parameter.ParameterType].GetConstructors())
-                    : GetCallableConstructor(parameter.ParameterType.GetConstructors());
+                var type = FindType(parameter.ParameterType);
+
+                var ctor = GetCallableConstructor(type.GetConstructors());
 
                 var paramCtor = ctor;
 
@@ -100,13 +99,34 @@ namespace DIContainer
             return ctorData.ToArray();
         }
 
+        private Type FindType(Type type)
+        {
+            if(_singletons.ContainsKey(type))
+            {
+                return _singletons[type];
+            }
+            if(_singletons.TryGetValue(type, out var singleton))
+            {
+                return singleton;
+            }
+            if(_scoped.ContainsKey(type))
+            {
+                return _scoped[type];
+            }
+            if(_scoped.TryGetValue(type, out var scopedType))
+            {
+                return scopedType;
+            }
+
+            return null;
+        }
+
         private ConstructorInfo GetCallableConstructor(IEnumerable<ConstructorInfo> constructors)
         {
             ConstructorInfo resultConstructor = null;
 
             foreach (var constructor in constructors)
             {
-                var allParamsCreatable = false;
                 var parameters = constructor.GetParameters();
 
                 if (!parameters.Any())
@@ -114,21 +134,22 @@ namespace DIContainer
                     return constructor;
                 }
 
+                bool canCreate = false;
+
                 foreach (var parameter in parameters)
                 {
-                    if (!_singletons.ContainsKey(parameter.ParameterType))
+                    bool haveSingleton = _singletons.ContainsKey(parameter.ParameterType);
+                    bool haveInScope = _scoped.ContainsKey(parameter.ParameterType);
+
+                    if (!haveSingleton && !haveInScope)
                     {
                         break;
                     }
 
-                    allParamsCreatable = true;
+                    canCreate = true;
                 }
 
-                if (allParamsCreatable)
-                {
-                    resultConstructor = constructor;
-                }
-
+                if (canCreate) return constructor;
             }
 
             return resultConstructor;
