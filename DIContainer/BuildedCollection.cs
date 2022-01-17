@@ -20,42 +20,61 @@ namespace DIContainer
             _singletons = singletons;
             _scoped = scoped;
 
-            BuildAllSingletons();
+            //BuildAllSingletons();
         }
 
-        public T Get<T>() where T: class
+        public T Get<T>() where T : class => (T)GetObjectFromCollections(typeof(T));
+
+        public object Get(Type type) => GetObjectFromCollections(type);
+
+        private object GetObjectFromCollections(Type type)
         {
-            if (_createdSingletons.ContainsKey(typeof(T)))
+            if (_singletons.ContainsKey(type))
             {
-                return (T) _createdSingletons[typeof(T)];
+                return GetOrCreateSingleton(type);
             }
 
-            if (_scoped.ContainsKey(typeof(T)))
+            if (_scoped.ContainsKey(type))
             {
-                return (T)CreateFromDiByConstructor(_scoped[typeof(T)]);
+                return CreateFromCollectionByConstructor(_scoped[type]);
             }
 
             return null;
         }
 
-        private void BuildAllSingletons()
+        private object GetOrCreateSingleton(Type type)
         {
-            foreach (var singleton in _singletons)
+            if (_createdSingletons.ContainsKey(type))
             {
-                var obj = CreateFromDiByConstructor(singleton.Value);
-                _createdSingletons[singleton.Key] = obj;
+                return _createdSingletons[type];
+            }
+            else
+            {
+                object obj = CreateFromCollectionByConstructor(_singletons[type]);
+                _createdSingletons[type] = obj;
+                return obj;
             }
         }
 
-        private object CreateFromDiByConstructor(Type classType)
+
+        //private void BuildAllSingletons()
+        //{
+        //    foreach (var singleton in _singletons)
+        //    {
+        //        object obj = CreateFromCollectionByConstructor(singleton.Value);
+        //        _createdSingletons[singleton.Key] = obj;
+        //    }
+        //}
+
+        private object CreateFromCollectionByConstructor(Type classType)
         {
             var ctor = GetCallableConstructor(classType.GetConstructors(BindingFlags.Public | BindingFlags.Instance));
 
             if (ctor == null) throw new DiException($"There are no callable constructor for type {classType.Name}");
 
-            var ctorParams = GetConstructorParams(ctor);
+            object[] ctorParams = GetConstructorParams(ctor);
 
-            var instance = ctor.Invoke(ctorParams);
+            object instance = ctor.Invoke(ctorParams);
 
             return instance;
         }
@@ -74,9 +93,9 @@ namespace DIContainer
 
             foreach (var parameter in parameters)
             {
-                if (_createdSingletons.ContainsKey(parameter.ParameterType))
+                if (_singletons.ContainsKey(parameter.ParameterType))
                 {
-                    ctorData.Add(_createdSingletons[parameter.ParameterType]);
+                    ctorData.Add(GetOrCreateSingleton(parameter.ParameterType));
                     continue;
                 }
 
@@ -91,7 +110,7 @@ namespace DIContainer
                     throw new DiException($"Cannot create param`s ctor of type {parameter.ParameterType.Name}");
                 }
 
-                var param = paramCtor.Invoke(GetConstructorParamsInner(paramCtor));
+                object param = paramCtor.Invoke(GetConstructorParamsInner(paramCtor));
 
                 ctorData.Add(param);
             }

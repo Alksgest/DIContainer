@@ -110,6 +110,25 @@ namespace DIContainer.Test
         }
 
         [Fact]
+        public void SingletonTest6()
+        {
+            var collection = CollectionFactory.CreateCollection();
+
+            collection
+                .RegisterScoped<IService, Service>()
+                .RegisterSingleton<IRepository, Repository>();
+
+            var builder = collection.Build();
+
+            var service1 = builder.Get<IService>();
+            var service2 = builder.Get<Service>();
+            var service3 = builder.Get<Service>();
+
+            Assert.NotEqual(service1, service2);
+            Assert.Equal(service2, service3);
+        }
+
+        [Fact]
         public void ScopedTest1()
         {
             var collection = CollectionFactory.CreateCollection();
