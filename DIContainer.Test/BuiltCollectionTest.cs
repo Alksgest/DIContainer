@@ -6,7 +6,7 @@ using Xunit;
 
 namespace DIContainer.Test
 {
-    public class BuildedCollectionTest
+    public class BuiltCollectionTest
     {
         [Fact]
         public void SingletonTest1()

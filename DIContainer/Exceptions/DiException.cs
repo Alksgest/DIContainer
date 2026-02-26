@@ -1,11 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Runtime.Serialization;
-using System.Text;
 
 namespace DIContainer.Exceptions
 {
     [Serializable]
+    // TODO: make it more specific
     public class DiException : Exception
     {
         public DiException()

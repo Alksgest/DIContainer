@@ -5,8 +5,8 @@ namespace DIContainer
 {
     public class DependencyCollection : IDependencyCollection
     {
-        private readonly IDictionary<Type, Type> _scoped = new Dictionary<Type, Type>();
-        private readonly IDictionary<Type, Type> _singletons = new Dictionary<Type, Type>();
+        private readonly IDictionary<string, Type> _scoped = new Dictionary<string, Type>();
+        private readonly IDictionary<string, Type> _singletons = new Dictionary<string, Type>();
 
         internal DependencyCollection()
         {
@@ -14,55 +14,76 @@ namespace DIContainer
 
         public IDependencyCollection RegisterSingleton<TClass>() where TClass : class
         {
-            if (_singletons.ContainsKey(typeof(TClass)))
-            {
-                return this;
-            }
+            var (type, fullTypeName) = GetTypeAndTypeFullName<TClass>();
 
-            _singletons[typeof(TClass)] = typeof(TClass);
+            if (!_singletons.ContainsKey(fullTypeName))
+            {
+                _singletons[fullTypeName] = type;
+            }
 
             return this;
         }
 
         public IDependencyCollection RegisterSingleton<TInterface, TClass>() where TClass : class, TInterface
         {
-            if (_singletons.ContainsKey(typeof(TInterface)))
+            var type = typeof(TInterface);
+            var fullInterfaceName = type.FullName;
+
+            if (fullInterfaceName == null)
             {
-                return this;
+                // TODO: make an exception
+                throw new Exception();
             }
 
-            _singletons[typeof(TInterface)] = typeof(TClass);
+            if (!_singletons.ContainsKey(fullInterfaceName))
+            {
+                _singletons[fullInterfaceName] = typeof(TClass);
+            }
 
             return this;
         }
 
         public IDependencyCollection RegisterScoped<TClass>() where TClass : class
         {
-            if (_scoped.ContainsKey(typeof(TClass)))
-            {
-                return this;
-            }
+            var (type, fullTypeName) = GetTypeAndTypeFullName<TClass>();
 
-            _scoped[typeof(TClass)] = typeof(TClass);
+            if (!_scoped.ContainsKey(fullTypeName))
+            {
+                _scoped[fullTypeName] = type;
+            }
 
             return this;
         }
 
         public IDependencyCollection RegisterScoped<TInterface, TClass>() where TClass : class, TInterface
         {
-            if (_scoped.ContainsKey(typeof(TInterface)))
-            {
-                return this;
-            }
+            var (_, fullInterfaceName) = GetTypeAndTypeFullName<TInterface>();
 
-            _scoped[typeof(TInterface)] = typeof(TClass);
+            if (!_scoped.ContainsKey(fullInterfaceName))
+            {
+                _scoped[fullInterfaceName] = typeof(TClass);
+            }
 
             return this;
         }
 
-        public IBuildedCollection Build()
+        public IBuiltCollection Build()
         {
-            return new BuildedCollection(_singletons, _scoped);
+            return new BuiltCollection(_singletons, _scoped);
+        }
+
+        private static (Type, string) GetTypeAndTypeFullName<T>()
+        {
+            var type = typeof(T);
+            var fullTypeName = type.FullName;
+
+            if (fullTypeName == null)
+            {
+                // TODO: make an exception
+                throw new Exception();
+            }
+
+            return (type, fullTypeName);
         }
     }
 }

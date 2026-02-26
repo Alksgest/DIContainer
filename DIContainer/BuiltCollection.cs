@@ -6,16 +6,16 @@ using DIContainer.Exceptions;
 
 namespace DIContainer
 {
-    internal class BuildedCollection : IBuildedCollection
+    internal class BuiltCollection : IBuiltCollection
     {
-        private readonly IDictionary<Type, object> _createdSingletons = new Dictionary<Type, object>();
+        private readonly IDictionary<string, object> _createdSingletons = new Dictionary<string, object>();
 
-        private readonly IDictionary<Type, Type> _singletons;
-        private readonly IDictionary<Type, Type> _scoped;
+        private readonly IDictionary<string, Type> _singletons;
+        private readonly IDictionary<string, Type> _scoped;
 
-        internal BuildedCollection(
-            IDictionary<Type, Type> singletons,
-            IDictionary<Type, Type> scoped)
+        internal BuiltCollection(
+            IDictionary<string, Type> singletons,
+            IDictionary<string, Type> scoped)
         {
             _singletons = singletons;
             _scoped = scoped;
@@ -23,18 +23,23 @@ namespace DIContainer
             BuildAllSingletons();
         }
 
-        public T Get<T>() where T: class
+        public T Get<T>() where T : class
         {
-            if (_createdSingletons.ContainsKey(typeof(T)))
+            var type = typeof(T);
+            var fullTypeName = type.FullName!;
+
+            if (_createdSingletons.TryGetValue(fullTypeName, out var singleton))
             {
-                return (T) _createdSingletons[typeof(T)];
+                return (T)singleton;
             }
 
-            if (_scoped.ContainsKey(typeof(T)))
+            if (_scoped.TryGetValue(fullTypeName, out var typeToCreate))
             {
-                return (T)CreateFromDiByConstructor(_scoped[typeof(T)]);
+                return (T)CreateFromDiByConstructor(typeToCreate);
             }
 
+            //TODO: throw an exception
+            
             return null;
         }
 
@@ -51,7 +56,10 @@ namespace DIContainer
         {
             var ctor = GetCallableConstructor(classType.GetConstructors(BindingFlags.Public | BindingFlags.Instance));
 
-            if (ctor == null) throw new DiException($"There are no callable constructor for type {classType.Name}");
+            if (ctor == null)
+            {
+                throw new DiException($"There are no callable constructor for type {classType.Name}");
+            }
 
             var ctorParams = GetConstructorParams(ctor);
 
@@ -70,13 +78,18 @@ namespace DIContainer
             var ctorData = new List<object>(4);
 
             var parameters = constructor.GetParameters();
-            if (!parameters.Any()) return Array.Empty<object>();
+            if (!parameters.Any())
+            {
+                return Array.Empty<object>();
+            }
 
             foreach (var parameter in parameters)
             {
-                if (_createdSingletons.ContainsKey(parameter.ParameterType))
+                var fullTypeName = parameter.ParameterType.FullName!;
+                
+                if (_createdSingletons.TryGetValue(fullTypeName, out var singleton))
                 {
-                    ctorData.Add(_createdSingletons[parameter.ParameterType]);
+                    ctorData.Add(singleton);
                     continue;
                 }
 
@@ -101,19 +114,24 @@ namespace DIContainer
 
         private Type FindType(Type type)
         {
-            if(_singletons.ContainsKey(type))
+            var fullTypeName = type.FullName!;
+            
+            if (_singletons.TryGetValue(fullTypeName, out var foundSingleton))
             {
-                return _singletons[type];
+                return foundSingleton;
             }
-            if(_singletons.TryGetValue(type, out var singleton))
+
+            if (_singletons.TryGetValue(fullTypeName, out var singleton))
             {
                 return singleton;
             }
-            if(_scoped.ContainsKey(type))
+
+            if (_scoped.TryGetValue(fullTypeName, out var foundScoped))
             {
-                return _scoped[type];
+                return foundScoped;
             }
-            if(_scoped.TryGetValue(type, out var scopedType))
+
+            if (_scoped.TryGetValue(fullTypeName, out var scopedType))
             {
                 return scopedType;
             }
@@ -123,8 +141,6 @@ namespace DIContainer
 
         private ConstructorInfo GetCallableConstructor(IEnumerable<ConstructorInfo> constructors)
         {
-            ConstructorInfo resultConstructor = null;
-
             foreach (var constructor in constructors)
             {
                 var parameters = constructor.GetParameters();
@@ -134,12 +150,14 @@ namespace DIContainer
                     return constructor;
                 }
 
-                bool canCreate = false;
+                var canCreate = false;
 
                 foreach (var parameter in parameters)
                 {
-                    bool haveSingleton = _singletons.ContainsKey(parameter.ParameterType);
-                    bool haveInScope = _scoped.ContainsKey(parameter.ParameterType);
+                    var fullTypeName = parameter.ParameterType.FullName!;
+                    
+                    var haveSingleton = _singletons.ContainsKey(fullTypeName);
+                    var haveInScope = _scoped.ContainsKey(fullTypeName);
 
                     if (!haveSingleton && !haveInScope)
                     {
@@ -149,10 +167,14 @@ namespace DIContainer
                     canCreate = true;
                 }
 
-                if (canCreate) return constructor;
+                if (canCreate)
+                {
+                    return constructor;
+                }
             }
 
-            return resultConstructor;
+            // TODO: throw an exception
+            return null;
         }
     }
 }

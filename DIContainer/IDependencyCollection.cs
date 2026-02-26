@@ -8,6 +8,6 @@ namespace DIContainer
         IDependencyCollection RegisterScoped<TClass>() where TClass : class;
         IDependencyCollection RegisterScoped<TInterface, TClass>() where TClass : class, TInterface;
 
-        IBuildedCollection Build();
+        IBuiltCollection Build();
     }
 }
