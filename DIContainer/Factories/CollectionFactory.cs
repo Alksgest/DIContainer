@@ -1,10 +1,9 @@
-﻿namespace DIContainer.Factories
+﻿namespace DIContainer.Factories;
+
+public static class CollectionFactory
 {
-    public static class CollectionFactory
+    public static IDependencyCollection CreateCollection()
     {
-        public static IDependencyCollection CreateCollection()
-        {
-            return new DependencyCollection();
-        }
+        return new DependencyCollection();
     }
 }

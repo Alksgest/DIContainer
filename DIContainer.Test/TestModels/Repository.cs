@@ -1,7 +1,6 @@
-namespace DIContainer.Test.TestModels
-{
-    public class Repository : IRepository
-    {
+namespace DIContainer.Test.TestModels;
 
-    }
+public class Repository : IRepository
+{
+
 }

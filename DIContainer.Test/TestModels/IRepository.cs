@@ -1,6 +1,5 @@
-namespace DIContainer.Test.TestModels
+namespace DIContainer.Test.TestModels;
+
+public interface IRepository
 {
-    public interface IRepository
-    {
-    }
 }

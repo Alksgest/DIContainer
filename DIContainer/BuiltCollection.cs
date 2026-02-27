@@ -3,178 +3,152 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using DIContainer.Exceptions;
+using DIContainer.Models;
 
-namespace DIContainer
+namespace DIContainer;
+
+internal class BuiltCollection : IBuiltCollection
 {
-    internal class BuiltCollection : IBuiltCollection
+    private readonly Dictionary<string, object> _createdSingletons = new();
+    private readonly Dictionary<string, RegisteredType> _registeredTypes;
+
+    internal BuiltCollection(Dictionary<string, RegisteredType> registeredTypes)
     {
-        private readonly IDictionary<string, object> _createdSingletons = new Dictionary<string, object>();
+        _registeredTypes = registeredTypes;
+    }
 
-        private readonly IDictionary<string, Type> _singletons;
-        private readonly IDictionary<string, Type> _scoped;
+    public T Get<T>() where T : class
+    {
+        var type = typeof(T);
+        var fullTypeName = type.FullName!;
 
-        internal BuiltCollection(
-            IDictionary<string, Type> singletons,
-            IDictionary<string, Type> scoped)
+        if (!_registeredTypes.TryGetValue(fullTypeName, out var registeredType))
         {
-            _singletons = singletons;
-            _scoped = scoped;
+            //TODO: throw an exception
+            return null;
+        }
+        
+        if (registeredType.Lifetime == Lifetime.Singleton)
+        {
+            return GetSingleton<T>(registeredType.Type, fullTypeName);
+        }
+            
+        return (T)CreateFromDiByConstructor(registeredType.Type);
+    }
 
-            BuildAllSingletons();
+    private T GetSingleton<T>(Type type, string fullTypeName) where T : class
+    {
+        if (_createdSingletons.TryGetValue(fullTypeName, out var singleton))
+        {
+            return (T)singleton;
+        }
+        
+        var obj = CreateFromDiByConstructor(type, true);
+        _createdSingletons[fullTypeName] = obj;
+
+        return obj as T;
+    }
+    
+
+    private object CreateFromDiByConstructor(Type classType, bool isSingleton = false)
+    {
+        var ctor = GetCallableConstructor(classType.GetConstructors(BindingFlags.Public | BindingFlags.Instance));
+
+        if (ctor == null)
+        {
+            throw new DiException($"There are no callable constructor for type {classType.Name}");
         }
 
-        public T Get<T>() where T : class
+        var ctorParams = GetConstructorParams(ctor, isSingleton);
+        var instance = ctor.Invoke(ctorParams);
+
+        return instance;
+    }
+
+    private object[] GetConstructorParams(ConstructorInfo constructor, bool isSingleton = false)
+    {
+        var ctorData = new List<object>(4);
+
+        var parameters = constructor.GetParameters();
+        if (parameters.Length == 0)
         {
-            var type = typeof(T);
-            var fullTypeName = type.FullName!;
+            return [];
+        }
+
+        foreach (var parameter in parameters)
+        {
+            var fullTypeName = parameter.ParameterType.FullName!;
 
             if (_createdSingletons.TryGetValue(fullTypeName, out var singleton))
             {
-                return (T)singleton;
+                ctorData.Add(singleton);
+                continue;
             }
 
-            if (_scoped.TryGetValue(fullTypeName, out var typeToCreate))
+            var fullName = parameter.ParameterType.FullName;
+            if (!_registeredTypes.TryGetValue(fullName!, out var registeredType))
             {
-                return (T)CreateFromDiByConstructor(typeToCreate);
+                throw new DiException($"Cannot create param of type {parameter.ParameterType.Name}");
             }
 
-            //TODO: throw an exception
-            
-            return null;
-        }
-
-        private void BuildAllSingletons()
-        {
-            foreach (var singleton in _singletons)
+            if (isSingleton && registeredType.Lifetime != Lifetime.Singleton)
             {
-                var obj = CreateFromDiByConstructor(singleton.Value);
-                _createdSingletons[singleton.Key] = obj;
+                //TODO: make an exception
+                throw new Exception("Singleton cannot depend on transient");
             }
-        }
 
-        private object CreateFromDiByConstructor(Type classType)
-        {
-            var ctor = GetCallableConstructor(classType.GetConstructors(BindingFlags.Public | BindingFlags.Instance));
+            var type = registeredType.Type;
+            var ctor = GetCallableConstructor(type.GetConstructors());
 
             if (ctor == null)
             {
-                throw new DiException($"There are no callable constructor for type {classType.Name}");
+                throw new DiException($"Cannot create param`s ctor of type {parameter.ParameterType.Name}");
             }
 
-            var ctorParams = GetConstructorParams(ctor);
+            var param = ctor.Invoke(GetConstructorParams(ctor));
 
-            var instance = ctor.Invoke(ctorParams);
-
-            return instance;
+            ctorData.Add(param);
         }
 
-        private object[] GetConstructorParams(ConstructorInfo constructor)
-        {
-            return GetConstructorParamsInner(constructor);
-        }
+        return ctorData.ToArray();
+    }
+    
 
-        private object[] GetConstructorParamsInner(ConstructorInfo constructor)
+    private ConstructorInfo GetCallableConstructor(IEnumerable<ConstructorInfo> constructors)
+    {
+        foreach (var constructor in constructors)
         {
-            var ctorData = new List<object>(4);
-
             var parameters = constructor.GetParameters();
-            if (!parameters.Any())
+
+            if (parameters.Length == 0)
             {
-                return Array.Empty<object>();
+                return constructor;
             }
+
+            var canCreate = false;
 
             foreach (var parameter in parameters)
             {
                 var fullTypeName = parameter.ParameterType.FullName!;
-                
-                if (_createdSingletons.TryGetValue(fullTypeName, out var singleton))
+
+                var isRegistered = _registeredTypes.ContainsKey(fullTypeName);
+
+                if (!isRegistered)
                 {
-                    ctorData.Add(singleton);
-                    continue;
+                    // TODO: throw an exception
+                    break;
                 }
 
-                var type = FindType(parameter.ParameterType);
-
-                var ctor = GetCallableConstructor(type.GetConstructors());
-
-                var paramCtor = ctor;
-
-                if (paramCtor == null)
-                {
-                    throw new DiException($"Cannot create param`s ctor of type {parameter.ParameterType.Name}");
-                }
-
-                var param = paramCtor.Invoke(GetConstructorParamsInner(paramCtor));
-
-                ctorData.Add(param);
+                canCreate = true;
             }
 
-            return ctorData.ToArray();
+            if (canCreate)
+            {
+                return constructor;
+            }
         }
 
-        private Type FindType(Type type)
-        {
-            var fullTypeName = type.FullName!;
-            
-            if (_singletons.TryGetValue(fullTypeName, out var foundSingleton))
-            {
-                return foundSingleton;
-            }
-
-            if (_singletons.TryGetValue(fullTypeName, out var singleton))
-            {
-                return singleton;
-            }
-
-            if (_scoped.TryGetValue(fullTypeName, out var foundScoped))
-            {
-                return foundScoped;
-            }
-
-            if (_scoped.TryGetValue(fullTypeName, out var scopedType))
-            {
-                return scopedType;
-            }
-
-            return null;
-        }
-
-        private ConstructorInfo GetCallableConstructor(IEnumerable<ConstructorInfo> constructors)
-        {
-            foreach (var constructor in constructors)
-            {
-                var parameters = constructor.GetParameters();
-
-                if (!parameters.Any())
-                {
-                    return constructor;
-                }
-
-                var canCreate = false;
-
-                foreach (var parameter in parameters)
-                {
-                    var fullTypeName = parameter.ParameterType.FullName!;
-                    
-                    var haveSingleton = _singletons.ContainsKey(fullTypeName);
-                    var haveInScope = _scoped.ContainsKey(fullTypeName);
-
-                    if (!haveSingleton && !haveInScope)
-                    {
-                        break;
-                    }
-
-                    canCreate = true;
-                }
-
-                if (canCreate)
-                {
-                    return constructor;
-                }
-            }
-
-            // TODO: throw an exception
-            return null;
-        }
+        // TODO: throw an exception
+        return null;
     }
 }

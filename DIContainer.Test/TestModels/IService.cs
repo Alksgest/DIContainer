@@ -1,7 +1,6 @@
-namespace DIContainer.Test.TestModels
+namespace DIContainer.Test.TestModels;
+
+public interface IService
 {
-    public interface IService
-    {
-        IRepository Repo { get; }
-    }
+    IRepository Repo { get; }
 }
